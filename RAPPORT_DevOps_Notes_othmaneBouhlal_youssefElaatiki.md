@@ -5,11 +5,11 @@
 **Établissement :** Formation / Module DevOps  
 **Projet :** Réalisation d’une application full-stack orientée DevOps  
 **Titre :** Markdown Notes App  
-**Auteurs :** Nom1 – Nom2  
+**Auteurs :**  Youssef Elaatiki - Othmane Bouhlal 
 **Dépôt Git :** `YoussefElaatiki/Exam_Devops`  
 **Répertoire du livrable :** `04-notes-app/`  
 **Date :** 2026  
-**Encadrant :** À compléter  
+**Encadrant :** Soufiane HAMIDA
 
 ---
 
@@ -600,23 +600,22 @@ Ces points montrent qu’un travail DevOps sérieux exige une attention permanen
 
 Une répartition logique du travail entre deux membres peut être la suivante :
 
-**Nom1**
+**Youssef Elaatiki**
+- conception initiale du backend (API Express, modélisation Prisma, authentification JWT) ;
+- rédaction des tests backend (Vitest, Supertest) ;
+- conception du frontend (composants React, store Zustand, pages et navigation) ;
+- mise en place initiale du pipeline CI/CD (GitHub Actions) et publication des images sur GHCR ;
+- rédaction du README et de la documentation technique initiale.
 
-- conception du backend ;
-- modélisation Prisma ;
-- sécurisation JWT ;
-- tests backend ;
-- conteneurisation API ;
-- configuration Docker Compose.
+**Othmane Bouhlal**
+- tests et validation de bout en bout de l'application en environnement Docker local ;
+- diagnostic et correction d'un bug critique de conteneurisation (incompatibilité OpenSSL/Prisma sur l'image Alpine, empêchant le démarrage du backend) ;
+- correction du pipeline CI/CD (ajout d'un service PostgreSQL manquant pour les tests, intégration du linter) ;
+- mise en place du workflow Git (branches develop/feature, pull requests) et nettoyage de la gestion des fichiers d'environnement (.env) ;
+- relecture et compréhension du code backend et frontend en vue de la soutenance ;
+- rédaction et finalisation du rapport.
 
-**Nom2**
 
-- conception du frontend ;
-- composants React ;
-- store Zustand ;
-- pages et navigation ;
-- configuration Nginx ;
-- rédaction documentaire.
 
 ### 17.2 Travail commun
 

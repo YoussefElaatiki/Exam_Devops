@@ -1,4 +1,0 @@
-# Services are already declared alongside each deployment manifest.
-apiVersion: v1
-kind: List
-items: []
