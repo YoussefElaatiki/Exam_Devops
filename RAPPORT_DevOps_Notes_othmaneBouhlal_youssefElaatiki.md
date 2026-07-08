@@ -5,7 +5,7 @@
 **Établissement :** Formation / Module DevOps  
 **Projet :** Réalisation d’une application full-stack orientée DevOps  
 **Titre :** Markdown Notes App  
-**Auteurs :**  Youssef Elaatiki - Othmane Bouhlal 
+**Auteurs :** Youssef Elaatiki - Othmane Bouhlal
 **Dépôt Git :** `YoussefElaatiki/Exam_Devops`  
 **Répertoire du livrable :** `04-notes-app/`  
 **Date :** 2026  
@@ -15,25 +15,25 @@
 
 ## Sommaire
 
-1. Introduction  
-2. Objectifs du projet  
-3. Présentation fonctionnelle  
-4. Architecture générale  
-5. Architecture logicielle détaillée  
-6. Mise en œuvre du backend  
-7. Mise en œuvre du frontend  
-8. Base de données et persistance  
-9. Sécurité et authentification  
-10. Stratégie Git  
-11. Conteneurisation  
-12. Orchestration locale avec Docker Compose  
-13. Pipeline CI/CD  
-14. Déploiement Kubernetes  
-15. Tests et validation  
-16. Difficultés rencontrées  
-17. Répartition du travail  
-18. Conclusion  
-19. Annexes  
+1. Introduction
+2. Objectifs du projet
+3. Présentation fonctionnelle
+4. Architecture générale
+5. Architecture logicielle détaillée
+6. Mise en œuvre du backend
+7. Mise en œuvre du frontend
+8. Base de données et persistance
+9. Sécurité et authentification
+10. Stratégie Git
+11. Conteneurisation
+12. Orchestration locale avec Docker Compose
+13. Pipeline CI/CD
+14. Déploiement Kubernetes
+15. Tests et validation
+16. Difficultés rencontrées
+17. Répartition du travail
+18. Conclusion
+19. Annexes
 
 ---
 
@@ -109,9 +109,9 @@ Ce cas d’usage est particulièrement intéressant dans un examen DevOps, car i
 
 L’architecture globale repose sur trois composants principaux :
 
-1. **Frontend** : application React/Vite servie par Nginx.  
-2. **Backend** : API Express en TypeScript exposant les routes métier.  
-3. **Base de données** : PostgreSQL 16 pour stocker utilisateurs et notes.  
+1. **Frontend** : application React/Vite servie par Nginx.
+2. **Backend** : API Express en TypeScript exposant les routes métier.
+3. **Base de données** : PostgreSQL 16 pour stocker utilisateurs et notes.
 
 Ces composants communiquent de la manière suivante :
 
@@ -343,12 +343,12 @@ Les éléments sensibles sont externalisés via :
 
 ### 10.1 Principes retenus
 
-La stratégie Git recommandée pour ce projet est basée sur :
+La stratégie Git suivie repose sur :
 
 - une branche principale stable (`main`) ;
-- des branches de travail dédiées aux fonctionnalités ;
-- des commits courts mais explicites ;
-- des pull requests pour revue et intégration.
+- une branche d'intégration (`develop`) ;
+- des branches de fonctionnalités dédiées (`feature/fix-backend-docker`, `feature/fix-ci-cleanup-duplicates`) ;
+- des pull requests avec relecture avant fusion dans `develop`.
 
 ### 10.2 Bénéfices
 
@@ -443,7 +443,7 @@ Il permet de valider rapidement que l’ensemble du système fonctionne de bout 
 Le pipeline GitHub Actions a pour rôle de :
 
 - vérifier la qualité minimale du code ;
-- exécuter les tests backend ;
+- exécuter les tests backend contre une vraie base PostgreSQL ;
 - construire le frontend ;
 - construire les images Docker ;
 - publier les images sur GHCR en cas de push sur `main`.
@@ -463,15 +463,18 @@ Le pipeline se déclenche sur :
 - `push` vers `main` ;
 - `pull_request` ciblant `main`.
 
-### 13.4 Intérêt DevOps
+### 13.4 Correctif apporté
+
+Le job `lint-and-test` échouait initialement en CI : les tests backend nécessitent une connexion PostgreSQL réelle, mais aucune base de données n'était démarrée dans l'environnement GitHub Actions. Un service `postgres` a été ajouté au job pour fournir une base de test éphémère, et l'étape de lint (`npm run lint`), prévue mais absente du workflow, a été intégrée.
+
+### 13.5 Intérêt DevOps
 
 Cette automatisation :
 
 - réduit les erreurs manuelles ;
 - fiabilise la chaîne de livraison ;
 - détecte rapidement les régressions ;
-- normalise les étapes de build ;
-- prépare une industrialisation progressive.
+- normalise les étapes de build.
 
 ---
 
@@ -487,40 +490,42 @@ Le dossier `k8s/` contient :
 - `postgres-deployment.yaml` ;
 - `backend-deployment.yaml` ;
 - `frontend-deployment.yaml` ;
-- `services.yaml`.
+- `services.yaml` (les services sont déclarés directement au sein de chaque manifest de déploiement).
 
-### 14.2 Ressources déployées
+### 14.2 Déploiement réel et validation
+
+Le déploiement a été testé sur Kubernetes local (Docker Desktop). Après application des manifests (`kubectl apply -f k8s/`), l'ensemble des pods atteint l'état `Running` :
+
+- 2 réplicas `notes-backend` ;
+- 2 réplicas `notes-frontend` ;
+- 1 pod `postgres`.
+
+L'application a été rendue accessible localement via `kubectl port-forward`, confirmant le bon fonctionnement de bout en bout du déploiement.
+
+### 14.3 Bug découvert et corrigé
+
+Lors du premier déploiement, les pods backend restaient bloqués en `CrashLoopBackOff`. Les logs (`kubectl logs`) ont révélé que la variable `DATABASE_URL` définie dans `secret.yaml` était incomplète (protocole `postgresql://` et identifiants manquants), provoquant une erreur de validation du schéma Prisma. La correction de cette chaîne de connexion a permis aux pods de démarrer correctement et de passer les migrations.
+
+### 14.4 Ressources déployées
 
 Le déploiement prévoit :
 
 - un namespace dédié ;
-- une configuration centralisée ;
-- des secrets pour les données sensibles ;
+- une configuration centralisée (ConfigMap) ;
+- des secrets pour les données sensibles (Secret) ;
 - un déploiement PostgreSQL avec PVC ;
-- un déploiement backend répliqué ;
-- un déploiement frontend répliqué ;
-- des services de type `ClusterIP` et `NodePort`.
+- des déploiements backend et frontend répliqués (2 instances chacun) ;
+- des services internes de type `ClusterIP`.
 
-### 14.3 Résilience minimale
+### 14.5 Résilience minimale
 
-Les éléments suivants renforcent la robustesse :
-
-- probes de liveness et readiness sur le backend ;
+- probes de liveness et readiness sur le backend, vérifiées fonctionnelles lors du déploiement ;
 - réplicas multiples pour les couches applicatives ;
-- ressources CPU/mémoire déclarées ;
-- séparation des responsabilités entre composants.
+- ressources CPU/mémoire déclarées.
 
-### 14.4 Limites connues
+### 14.6 Limites connues
 
-Pour un véritable environnement de production, il faudrait encore envisager :
-
-- un ingress contrôleur ;
-- TLS ;
-- un stockage managé ou plus robuste ;
-- une stratégie de sauvegarde ;
-- des secrets chiffrés ;
-- une supervision ;
-- une journalisation centralisée.
+Pour un véritable environnement de production, il faudrait encore envisager : un ingress contrôleur, TLS, un stockage managé, une stratégie de sauvegarde, des secrets chiffrés, une supervision, et une journalisation centralisée. Le déploiement actuel a été testé en environnement local (Docker Desktop Kubernetes), sans registre externe — les images utilisées sont celles construites localement.
 
 ---
 
@@ -592,7 +597,27 @@ Des détails apparemment mineurs peuvent bloquer la qualité globale, par exempl
 
 Ces points montrent qu’un travail DevOps sérieux exige une attention permanente aux interfaces entre les composants.
 
----
+### 16.5 Crash du backend en conteneur (OpenSSL/Prisma)
+
+Le conteneur backend entrait en boucle de redémarrage constante. Les logs ont révélé que le moteur Prisma ne parvenait pas à démarrer, faute d'OpenSSL sur l'image `node:20-alpine`, une version récente de cette image ne l'incluant plus par défaut. L'ajout de `RUN apk add --no-cache openssl` dans les deux étapes du Dockerfile a résolu le problème.
+
+### 16.6 Structure de dépôt dupliquée
+
+Une inspection du dépôt a révélé l'existence de deux arborescences parallèles (`backend/`, `frontend/`, `k8s/` à la racine, en plus de `04-notes-app/`), vestige d'une phase de fusion antérieure. Seule l'arborescence sous `04-notes-app/` correspondait à l'application réellement testée et fonctionnelle ; les dossiers dupliqués à la racine ont été supprimés pour clarifier le dépôt.
+
+### 16.7 Pipeline CI/CD en échec
+
+Le pipeline GitHub Actions échouait systématiquement en environnement CI, les tests backend nécessitant une base PostgreSQL réelle non disponible dans ce contexte. L'ajout d'un service `postgres` dédié dans le job de test a résolu le problème.
+
+### 16.8 Secret Kubernetes incomplet
+
+Lors du déploiement Kubernetes, les pods backend échouaient avec une erreur de validation Prisma. La variable `DATABASE_URL` du `Secret` était incomplète (protocole et identifiants manquants) — un bug pré-existant dans le manifest, jamais détecté faute de déploiement testé auparavant. La correction de cette chaîne a permis un déploiement fonctionnel.
+
+### 16.9 Gestion des fichiers d'environnement
+
+Le fichier `.env`, bien que listé dans `.gitignore`, était resté suivi par Git depuis un commit antérieur à cette règle. Il a été retiré du suivi Git (`git rm --cached`) sans être supprimé du poste local.
+
+Ces difficultés illustrent qu'une chaîne DevOps complète — conteneurisation, CI/CD, orchestration — nécessite une validation bout en bout : plusieurs de ces bugs n'étaient détectables qu'en exécutant réellement chaque étage de la chaîne, et non en se fiant à la seule lecture du code.
 
 ## 17. Répartition du travail
 
@@ -601,6 +626,7 @@ Ces points montrent qu’un travail DevOps sérieux exige une attention permanen
 Une répartition logique du travail entre deux membres peut être la suivante :
 
 **Youssef Elaatiki**
+
 - conception initiale du backend (API Express, modélisation Prisma, authentification JWT) ;
 - rédaction des tests backend (Vitest, Supertest) ;
 - conception du frontend (composants React, store Zustand, pages et navigation) ;
@@ -608,14 +634,13 @@ Une répartition logique du travail entre deux membres peut être la suivante :
 - rédaction du README et de la documentation technique initiale.
 
 **Othmane Bouhlal**
+
 - tests et validation de bout en bout de l'application en environnement Docker local ;
 - diagnostic et correction d'un bug critique de conteneurisation (incompatibilité OpenSSL/Prisma sur l'image Alpine, empêchant le démarrage du backend) ;
 - correction du pipeline CI/CD (ajout d'un service PostgreSQL manquant pour les tests, intégration du linter) ;
 - mise en place du workflow Git (branches develop/feature, pull requests) et nettoyage de la gestion des fichiers d'environnement (.env) ;
 - relecture et compréhension du code backend et frontend en vue de la soutenance ;
 - rédaction et finalisation du rapport.
-
-
 
 ### 17.2 Travail commun
 
@@ -674,8 +699,8 @@ Malgré ces perspectives d’évolution, le livrable actuel constitue déjà une
 
 ### Annexe A — Comptes de démonstration
 
-- Administrateur : `admin@notes.app` / `admin123`  
-- Utilisateur : `user@notes.app` / `user123`  
+- Administrateur : `admin@notes.app` / `admin123`
+- Utilisateur : `user@notes.app` / `user123`
 
 ### Annexe B — Commandes utiles
 
@@ -699,11 +724,11 @@ kubectl get all -n notes-app
 
 ### Annexe C — Variables d’environnement principales
 
-- `DATABASE_URL` : chaîne de connexion PostgreSQL  
-- `JWT_SECRET` : secret de signature des jetons  
-- `PORT` : port d’écoute du backend  
-- `CORS_ORIGIN` : origine autorisée pour le frontend  
-- `VITE_API_URL` : URL de l’API côté frontend  
+- `DATABASE_URL` : chaîne de connexion PostgreSQL
+- `JWT_SECRET` : secret de signature des jetons
+- `PORT` : port d’écoute du backend
+- `CORS_ORIGIN` : origine autorisée pour le frontend
+- `VITE_API_URL` : URL de l’API côté frontend
 
 ### Annexe D — Arborescence synthétique
 
