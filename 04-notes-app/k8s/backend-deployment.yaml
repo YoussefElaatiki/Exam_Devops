@@ -18,7 +18,7 @@ spec:
       containers:
         - name: notes-backend
           image: ghcr.io/youssefeelaatiki/exam_devops/notes-backend:latest
-          imagePullPolicy: Never
+          imagePullPolicy: Always
           ports:
             - containerPort: 4000
           env:
